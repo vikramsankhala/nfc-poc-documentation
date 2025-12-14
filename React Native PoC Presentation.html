@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Native NFC + Camera + WebView PoC</title>
+    <style>
+        :root {
+            --color-bg-base: #0f172a;
+            --color-bg-elevated: #020617;
+            --color-bg-surface: #1e293b;
+            --color-text-primary: #f1f5f9;
+            --color-text-secondary: #cbd5e1;
+            --color-text-muted: #94a3b8;
+            --color-accent: #38bdf8;
+            --color-success: #22c55e;
+            --color-warning: #f59e0b;
+            --color-error: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--color-bg-base);
+            color: var(--color-text-primary);
+            overflow-x: hidden;
+        }
+
+        .slide {
+            width: 960px;
+            height: 540px;
+            margin: 0 auto 20px;
+            display: flex;
+            flex-direction: column;
+            padding: 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide.center {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: var(--color-accent);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        h2 {
+            font-size: 2.25rem;
+            color: var(--color-accent);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            color: var(--color-accent);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--color-text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            color: var(--color-text-secondary);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .metadata {
+            font-size: 0.875rem;
+            color: var(--color-text-muted);
+            margin-top: 2rem;
+        }
+
+        ul {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        li {
+            font-size: 1.125rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.75rem;
+            padding-left: 2rem;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: var(--color-accent);
+            font-size: 1.25rem;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .tech-item {
+            background-color: var(--color-bg-surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .tech-item h4 {
+            color: var(--color-accent);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .tech-item p {
+            font-size: 0.95rem;
+            margin-bottom: 0;
+            color: var(--color-text-secondary);
+        }
+
+        .flow-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .flow-box {
+            flex: 1;
+            background-color: var(--color-bg-surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--color-accent);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .flow-box h4 {
+            color: var(--color-accent);
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .flow-box p {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .arrow {
+            text-align: center;
+            color: var(--color-accent);
+            font-weight: bold;
+            font-size: 1.5rem;
+            align-self: center;
+            margin: 0 0.5rem;
+        }
+
+        .code-block {
+            background-color: var(--color-bg-surface);
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--color-success);
+            overflow-x: auto;
+            margin: 1rem 0;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .status-mandatory {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--color-error);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .status-optional {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: var(--color-warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .status-success {
+            background-color: rgba(34, 197, 94, 0.15);
+            color: var(--color-success);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .arch-card {
+            background-color: var(--color-bg-surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-top: 3px solid var(--color-accent);
+            text-align: center;
+        }
+
+        .arch-card h4 {
+            color: var(--color-accent);
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .arch-card p {
+            font-size: 0.95rem;
+            margin-bottom: 0;
+        }
+
+        .message-flow {
+            background-color: var(--color-bg-surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--color-success);
+            margin-top: 1rem;
+        }
+
+        .message-flow h4 {
+            color: var(--color-success);
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .highlight {
+            color: var(--color-accent);
+            font-weight: 600;
+        }
+
+        .row {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .column {
+            flex: 1;
+        }
+
+        .deliverables {
+            background-color: rgba(34, 197, 94, 0.1);
+            border: 2px solid var(--color-success);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .deliverables h4 {
+            color: var(--color-success);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .deliverables li {
+            color: var(--color-text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Slide 1: Title Slide -->
+    <section class="slide center" style="background-color: #020617;">
+        <h1>React Native PoC</h1>
+        <p class="subtitle">NFC + Camera + WebView Integration</p>
+        <p style="font-size: 1rem; margin-top: 3rem; color: var(--color-text-muted);">A demonstration of seamless native and web capabilities in a single mobile app</p>
+        <p class="metadata">December 2025 | SAP Enterprise Solutions</p>
+    </section>
+
+    <!-- Slide 2: Problem Statement -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Problem Statement</h2>
+        <p style="margin-top: 1rem;">Build a single, cohesive mobile application that showcases three distinct capabilities working together:</p>
+        
+        <div class="architecture-grid" style="margin-top: 2rem;">
+            <div class="arch-card">
+                <h4>📡 NFC Integration</h4>
+                <p>Read NFC tags and display data</p>
+            </div>
+            <div class="arch-card">
+                <h4>📷 Camera Capture</h4>
+                <p>Capture photos and scan content</p>
+            </div>
+            <div class="arch-card">
+                <h4>🌐 Web Embedding</h4>
+                <p>Display React app via WebView</p>
+            </div>
+        </div>
+
+        <p style="margin-top: 2rem; font-size: 0.95rem; color: var(--color-text-muted);">
+            <span class="highlight">Key Requirement:</span> All capabilities integrated into one installable mobile app with seamless data flow between native and web components.
+        </p>
+    </section>
+
+    <!-- Slide 3: User Requirements Overview -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>User Requirements Overview</h2>
+        <p style="margin-top: 1rem;">The application must satisfy the following core requirements:</p>
+        
+        <div style="margin-top: 1.5rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; margin-bottom: 0.75rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Requirement 1: Single Cohesive Application</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;">One unified mobile app containing all three capabilities (NFC, Camera, WebView)</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; margin-bottom: 0.75rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Requirement 2: NFC Tag Reading</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;">Read NFC tags and display tag content to users</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; margin-bottom: 0.75rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Requirement 3: Camera Capture</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;">Capture photos and scan content with camera functionality</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; margin-bottom: 0.75rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Requirement 4: WebView Integration</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;">Display React web application via WebView embedding</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; margin-bottom: 0.75rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Requirement 5: Seamless Data Flow</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;">Real-time data synchronization between native and web components</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 4: Detailed Requirements (Part 1) -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Detailed Requirements (Part 1)</h2>
+        
+        <div style="margin-top: 1.5rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; margin-bottom: 1rem; border-radius: 8px; border-top: 3px solid var(--color-success);">
+                <h4 style="color: var(--color-success); margin-bottom: 0.75rem;">Requirement 6: Unified Navigation</h4>
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Users must be able to navigate seamlessly between NFC, Camera, and WebView screens within the same application.</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; margin-bottom: 1rem; border-radius: 8px; border-top: 3px solid var(--color-success);">
+                <h4 style="color: var(--color-success); margin-bottom: 0.75rem;">Requirement 7: Android Platform Support</h4>
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Application must run on Android devices with support for Android 7.0+ (API 24+), including proper permission handling.</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; margin-bottom: 1rem; border-radius: 8px; border-top: 3px solid var(--color-success);">
+                <h4 style="color: var(--color-success); margin-bottom: 0.75rem;">Requirement 8: Error Handling & UX</h4>
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Smooth, error-free user experience with proper handling of edge cases, permission denials, and device capability checks.</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; border-radius: 8px; border-top: 3px solid var(--color-success);">
+                <h4 style="color: var(--color-success); margin-bottom: 0.75rem;">Requirement 9: Production Readiness</h4>
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Production-ready deliverables including signed APK, documentation, testing strategy, and deployment artifacts.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 5: PoC Mapping to Requirements (Part 1) -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>PoC Mapping to Requirements (Part 1)</h2>
+        
+        <div style="margin-top: 1.5rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Req 1: Single Cohesive App</h4>
+                <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;"><strong>PoC Solution:</strong> React Native CLI creates single APK (~50-80 MB) with unified codebase, shared React Context, and integrated navigation via @react-navigation/native</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Req 2: NFC Tag Reading</h4>
+                <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;"><strong>PoC Solution:</strong> Dedicated NFC screen using react-native-nfc-manager, NDEF support, device capability detection, permission handling, and real-time tag display</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Req 3: Camera Capture</h4>
+                <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;"><strong>PoC Solution:</strong> Camera screen with react-native-vision-camera, live preview, HD capture, timestamped storage, and immediate photo preview</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Req 4: WebView Integration</h4>
+                <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;"><strong>PoC Solution:</strong> WebView screen using react-native-webview, supports remote URL or local bundle, full JavaScript execution, and responsive React SPA rendering</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 6: PoC Mapping to Requirements (Part 2) -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>PoC Mapping to Requirements (Part 2)</h2>
+        
+        <div style="margin-top: 1.5rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid var(--color-success);">
+                <h4 style="color: var(--color-success); margin-bottom: 0.5rem;">Req 5: Seamless Data Flow</h4>
+                <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;"><strong>PoC Solution:</strong> postMessage bridge with JSON messaging, React Context integration, real-time WebView updates, and bidirectional communication (native ↔ web)</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid var(--color-success);">
+                <h4 style="color: var(--color-success); margin-bottom: 0.5rem;">Req 6: Unified Navigation</h4>
+                <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;"><strong>PoC Solution:</strong> Bottom tab navigation with persistent state, clear visual indicators, smooth transitions, and context preservation across screen switches</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid var(--color-success);">
+                <h4 style="color: var(--color-success); margin-bottom: 0.5rem;">Req 7: Android Platform Support</h4>
+                <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;"><strong>PoC Solution:</strong> React Native CLI with Android 7.0+ (API 24) minimum SDK, native module integration, runtime permissions, and version compatibility handling</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--color-success);">
+                <h4 style="color: var(--color-success); margin-bottom: 0.5rem;">Req 8 & 9: Error Handling & Production</h4>
+                <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;"><strong>PoC Solution:</strong> Comprehensive try-catch blocks, device capability checks, graceful degradation, retry mechanisms, signed APK, documentation, and testing strategy</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 7: Requirements Satisfaction Summary -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Requirements Satisfaction Summary</h2>
+        
+        <div style="margin-top: 2rem; background-color: var(--color-bg-surface); padding: 2rem; border-radius: 8px; border: 2px solid var(--color-success);">
+            <h3 style="color: var(--color-success); margin-bottom: 1.5rem; text-align: center;">All 9 Requirements Satisfied ✓</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+                <div>
+                    <p style="color: var(--color-text-secondary); font-size: 0.95rem; margin-bottom: 0.5rem;"><strong>Architectural Support:</strong></p>
+                    <ul style="color: var(--color-text-secondary); line-height: 1.8; font-size: 0.9rem;">
+                        <li>• Single codebase & unified navigation</li>
+                        <li>• Shared state management</li>
+                        <li>• Bidirectional communication</li>
+                    </ul>
+                </div>
+                <div>
+                    <p style="color: var(--color-text-secondary); font-size: 0.95rem; margin-bottom: 0.5rem;"><strong>Technical Implementation:</strong></p>
+                    <ul style="color: var(--color-text-secondary); line-height: 1.8; font-size: 0.9rem;">
+                        <li>• Production-tested libraries</li>
+                        <li>• Native module integration</li>
+                        <li>• Comprehensive error handling</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(34, 197, 94, 0.3);">
+                <p style="color: var(--color-text-secondary); font-size: 0.95rem; text-align: center;">
+                    <span class="highlight">Every requirement is met with specific, implementable features and clear architectural support.</span>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 8: Solution Overview -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Solution Overview</h2>
+        <p>One React Native Android app with three distinct screens, unified navigation, and bidirectional communication.</p>
+
+        <div class="flow-container">
+            <div class="flow-box">
+                <h4>NFC Screen</h4>
+                <p>• Detect NFC capability</p>
+                <p>• Read NDEF tags</p>
+                <p>• Display tag content</p>
+            </div>
+            <div class="arrow">↔</div>
+            <div class="flow-box">
+                <h4>Shared State</h4>
+                <p>• React Context</p>
+                <p>• Global state management</p>
+                <p>• postMessage bridge</p>
+            </div>
+            <div class="arrow">↔</div>
+            <div class="flow-box">
+                <h4>WebView Screen</h4>
+                <p>• Embedded React SPA</p>
+                <p>• Display native data</p>
+                <p>• Handle messages</p>
+            </div>
+        </div>
+
+        <p style="margin-top: 1.5rem; font-size: 0.95rem;">
+            <span class="status-badge status-success">One APK</span>
+            <span class="status-badge status-success">Multiple Screens</span>
+            <span class="status-badge status-success">Data Sync</span>
+        </p>
+    </section>
+
+    <!-- Slide 4: Tech Stack & Libraries -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Tech Stack & Libraries</h2>
+
+        <div class="tech-stack">
+            <div class="tech-item">
+                <h4>🔧 Core Framework</h4>
+                <p><span class="highlight">React Native (CLI)</span> – Full native access, not Expo managed</p>
+            </div>
+            <div class="tech-item">
+                <h4>📍 Navigation</h4>
+                <p><span class="highlight">@react-navigation/native</span> – Bottom tabs or stack navigation</p>
+            </div>
+            <div class="tech-item">
+                <h4>📡 NFC Library</h4>
+                <p><span class="highlight">react-native-nfc-manager</span> – Read/write NDEF tags</p>
+            </div>
+            <div class="tech-item">
+                <h4>📷 Camera Library</h4>
+                <p><span class="highlight">react-native-vision-camera</span> – Photo capture + QR scanning</p>
+            </div>
+            <div class="tech-item">
+                <h4>🌐 WebView</h4>
+                <p><span class="highlight">react-native-webview</span> – Embedded React SPA</p>
+            </div>
+            <div class="tech-item">
+                <h4>🎛️ State Management</h4>
+                <p><span class="highlight">React Context</span> – Shared data across screens</p>
+            </div>
+        </div>
+
+        <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--color-text-muted);">
+            All libraries are production-tested and actively maintained. Total app size: ~50-80 MB (debug build).
+        </p>
+    </section>
+
+    <!-- Slide 5: Target Platforms & Requirements -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Target Platforms & Requirements</h2>
+
+        <div style="margin-top: 2rem;">
+            <div style="display: flex; gap: 2rem;">
+                <div style="flex: 1;">
+                    <h3 style="font-size: 1.25rem; color: var(--color-success);">✓ Android (Mandatory)</h3>
+                    <ul style="margin-top: 1rem; margin-left: 0;">
+                        <li>All three capabilities fully supported</li>
+                        <li>Android 7.0+ (API 24+)</li>
+                        <li>NFC hardware required for NFC tests</li>
+                        <li>Easier permission handling</li>
+                    </ul>
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="font-size: 1.25rem; color: var(--color-warning);">⚠ iOS (Optional)</h3>
+                    <ul style="margin-top: 1rem; margin-left: 0;">
+                        <li>NFC support limited (iOS 13.1+)</li>
+                        <li>Camera & WebView fully supported</li>
+                        <li>May require additional testing</li>
+                        <li>Nice-to-have for Phase 2</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem; border-left: 4px solid var(--color-accent);">
+            <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Device Permissions Required</h4>
+            <p style="font-size: 0.95rem; margin-bottom: 0;">NFC, Camera (with foreground service on Android 12+)</p>
+        </div>
+    </section>
+
+    <!-- Slide 6: NFC Screen Deep Dive -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>NFC Screen Architecture</h2>
+
+        <div class="flow-box" style="margin-top: 1.5rem;">
+            <h4>User Flow</h4>
+            <p style="font-size: 0.95rem;">1. Check device NFC capability → 2. Request permission → 3. Start listening → 4. Tap tag → 5. Read NDEF → 6. Display & sync to WebView</p>
+        </div>
+
+        <div class="code-block" style="margin-top: 1rem; font-size: 0.8rem;">
+<span style="color: var(--color-accent);">// React hook for NFC reading</span>
+const [nfcData, setNfcData] = useState(null);
+
+const startNFCScanning = async () => {
+  const supported = await NfcManager.isSupported();
+  if (!supported) { handleError("NFC not supported"); return; }
+  
+  await NfcManager.start();
+  const tag = await NfcManager.transceive([...]);
+  setNfcData(tag); <span style="color: var(--color-warning);">// Broadcast to WebView</span>
+};
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; border-radius: 6px; border-top: 3px solid var(--color-success);">
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary);"><span class="highlight">Supports:</span> Read/Write, NDEF format, Text & URL payloads</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; border-radius: 6px; border-top: 3px solid var(--color-warning);">
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary);"><span class="highlight">Handles:</span> Permission checks, device capability, error states</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 7: Camera Screen Deep Dive -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Camera Screen Architecture</h2>
+
+        <div class="flow-box" style="margin-top: 1.5rem;">
+            <h4>User Flow</h4>
+            <p style="font-size: 0.95rem;">1. Request camera permission → 2. Initialize camera → 3. Show preview → 4. Tap capture → 5. Save image → 6. Sync to WebView</p>
+        </div>
+
+        <div class="code-block" style="margin-top: 1rem; font-size: 0.8rem;">
+<span style="color: var(--color-accent);">// react-native-vision-camera setup</span>
+const camera = useRef(null);
+
+const takePhoto = async () => {
+  const photo = await camera.current.takePhoto();
+  const filename = `image_${Date.now()}.jpg`;
+  setCameraData({ filename, path: photo.path }); <span style="color: var(--color-warning);">// Broadcast</span>
+};
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; border-radius: 6px; border-top: 3px solid var(--color-success);">
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary);"><span class="highlight">Provides:</span> Live preview, HD capture, fast processing</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; border-radius: 6px; border-top: 3px solid var(--color-warning);">
+                <p style="font-size: 0.9rem; color: var(--color-text-secondary);"><span class="highlight">Optional:</span> QR/barcode scanning, filters, gallery</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 8: WebView Integration -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>WebView Screen & React SPA</h2>
+
+        <p style="margin-top: 1rem;">Embedded React web app (SPA) receives real-time data from native screens.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 1rem;">Option A: Remote URL</h4>
+                <p style="font-size: 0.95rem; margin-bottom: 0;">Load from hosted React app</p>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted);">source={{ uri: 'https://demo.company.com/poc' }}</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 1rem;">Option B: Local Bundle</h4>
+                <p style="font-size: 0.95rem; margin-bottom: 0;">Package SPA with app binary</p>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted);">source={require('./web-app/index.html')}</p>
+            </div>
+        </div>
+
+        <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem; border-left: 4px solid var(--color-success);">
+            <h4 style="color: var(--color-success); margin-bottom: 0.75rem;">Web App UI</h4>
+            <ul style="margin-left: 0;">
+                <li style="padding-left: 2rem;">Panel: "Last NFC Read: [tag content]"</li>
+                <li style="padding-left: 2rem;">Panel: "Last Camera Capture: [filename at timestamp]"</li>
+                <li style="padding-left: 2rem;">Real-time updates via postMessage API</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Slide 9: Data Communication Bridge -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>postMessage Bridge Architecture</h2>
+
+        <p style="margin-top: 1rem;">Bidirectional JSON-based messaging between React Native and embedded React web app.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+            <div class="message-flow" style="border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent);">Native → Web (Broadcast)</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 1rem;">Send NFC/camera data to WebView:</p>
+                <div class="code-block" style="font-size: 0.7rem; margin: 0;">
+webViewRef.current?.postMessage(
+  JSON.stringify({
+    type: 'NFC_TAG',
+    payload: tagText
+  })
+);
+                </div>
+            </div>
+            <div class="message-flow" style="border-left: 4px solid var(--color-success);">
+                <h4 style="color: var(--color-success);">Web → Native (Optional)</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 1rem;">WebView requests native actions:</p>
+                <div class="code-block" style="font-size: 0.7rem; margin: 0;">
+window.ReactNativeWebView?.postMessage(
+  JSON.stringify({
+    type: 'START_NFC',
+    payload: {}
+  })
+);
+                </div>
+            </div>
+        </div>
+
+        <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem; border-top: 3px solid var(--color-warning);">
+            <h4 style="color: var(--color-warning); margin-bottom: 0.75rem;">Message Schema</h4>
+            <p style="font-size: 0.9rem; margin-bottom: 0;"><span class="highlight">type:</span> Action identifier | <span class="highlight">payload:</span> Data object (flexible structure)</p>
+        </div>
+    </section>
+
+    <!-- Slide 10: Web App Message Listener -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Web App: Message Listener Pattern</h2>
+
+        <p style="margin-top: 1rem;">React component listening for native messages and updating UI in real-time.</p>
+
+        <div class="code-block" style="margin-top: 1.5rem; font-size: 0.75rem; height: 300px; overflow-y: auto;">
+<span style="color: var(--color-accent);">// Inside React component in WebView</span>
+import { useEffect, useState } from 'react';
+
+export const DataDisplay = () => {
+  const [nfcData, setNfcData] = useState(null);
+  const [cameraData, setCameraData] = useState(null);
+
+  useEffect(() => {
+    window.addEventListener('message', (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'NFC_TAG') {
+        setNfcData(msg.payload);
+      } else if (msg.type === 'CAMERA_CAPTURE') {
+        setCameraData(msg.payload);
+      }
+    });
+  }, []);
+
+  return (
+    &lt;div&gt;
+      &lt;h2&gt;Last NFC: {nfcData || 'Waiting...'}&lt;/h2&gt;
+      &lt;h2&gt;Last Camera: {cameraData?.filename || 'Waiting...'}&lt;/h2&gt;
+    &lt;/div&gt;
+  );
+};
+        </div>
+    </section>
+
+    <!-- Slide 11: App Navigation Flow -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Navigation & App Structure</h2>
+
+        <div style="margin-top: 2rem;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Bottom Tab Navigator (Recommended)</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; text-align: center; border-top: 4px solid var(--color-accent);">
+                    <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Tab 1: NFC</h4>
+                    <p style="font-size: 0.9rem; margin-bottom: 0;">Scan & display tags</p>
+                </div>
+                <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; text-align: center; border-top: 4px solid var(--color-accent);">
+                    <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Tab 2: Camera</h4>
+                    <p style="font-size: 0.9rem; margin-bottom: 0;">Capture & preview photos</p>
+                </div>
+                <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; text-align: center; border-top: 4px solid var(--color-accent);">
+                    <h4 style="color: var(--color-accent); margin-bottom: 0.5rem;">Tab 3: Dashboard</h4>
+                    <p style="font-size: 0.9rem; margin-bottom: 0;">WebView (React SPA)</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem; border-left: 4px solid var(--color-warning);">
+            <h4 style="color: var(--color-warning); margin-bottom: 0.75rem;">Alternative: Stack Navigator</h4>
+            <p style="font-size: 0.95rem; margin-bottom: 0;">Home → NFC Screen → Camera Screen → WebView Screen (with back navigation)</p>
+        </div>
+    </section>
+
+    <!-- Slide 12: State Management Strategy -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>State Management Strategy</h2>
+
+        <p style="margin-top: 1rem;">React Context API for simplicity and direct postMessage calls to WebView.</p>
+
+        <div class="architecture-grid" style="margin-top: 1.5rem;">
+            <div class="arch-card">
+                <h4>AppContext.js</h4>
+                <p style="font-size: 0.9rem;">Holds nfcData, cameraData, permissions state</p>
+            </div>
+            <div class="arch-card">
+                <h4>useAppContext Hook</h4>
+                <p style="font-size: 0.9rem;">Consumed by NFC & Camera screens</p>
+            </div>
+            <div class="arch-card">
+                <h4>WebViewBridge</h4>
+                <p style="font-size: 0.9rem;">Helper to post messages on context change</p>
+            </div>
+        </div>
+
+        <div class="code-block" style="margin-top: 1.5rem; font-size: 0.8rem;">
+const AppContext = createContext();
+
+export const AppProvider = ({ children }) => {
+  const [nfcData, setNfcData] = useState(null);
+  const [cameraData, setCameraData] = useState(null);
+  // ... more state
+  return (
+    &lt;AppContext.Provider value={{nfcData, setNfcData, ...}}&gt;
+      {children}
+    &lt;/AppContext.Provider&gt;
+  );
+};
+        </div>
+    </section>
+
+    <!-- Slide 13: Error Handling & Permissions -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Error Handling & Permissions</h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px;">
+                <h4 style="color: var(--color-accent); margin-bottom: 1rem;">NFC Permissions</h4>
+                <ul style="margin-left: 0;">
+                    <li style="padding-left: 2rem;">Check device support</li>
+                    <li style="padding-left: 2rem;">Request NFC permission</li>
+                    <li style="padding-left: 2rem;">Handle enablement state</li>
+                    <li style="padding-left: 2rem;">Graceful fallback UI</li>
+                </ul>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px;">
+                <h4 style="color: var(--color-accent); margin-bottom: 1rem;">Camera Permissions</h4>
+                <ul style="margin-left: 0;">
+                    <li style="padding-left: 2rem;">Runtime permission request</li>
+                    <li style="padding-left: 2rem;">Foreground service (Android 12+)</li>
+                    <li style="padding-left: 2rem;">Handle denials gracefully</li>
+                    <li style="padding-left: 2rem;">Permission retry flow</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem; border-left: 4px solid var(--color-warning);">
+            <h4 style="color: var(--color-warning); margin-bottom: 0.75rem;">General Patterns</h4>
+            <ul style="margin-left: 0;">
+                <li style="padding-left: 2rem;">Try/catch for all async operations</li>
+                <li style="padding-left: 2rem;">User-friendly error messages</li>
+                <li style="padding-left: 2rem;">Retry mechanisms where applicable</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Slide 14: Testing Strategy -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Testing Strategy</h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; border-top: 3px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 1rem;">Unit Tests</h4>
+                <ul style="margin-left: 0;">
+                    <li style="padding-left: 2rem;">Context API logic</li>
+                    <li style="padding-left: 2rem;">Component rendering</li>
+                    <li style="padding-left: 2rem;">Message parsing</li>
+                    <li style="padding-left: 2rem;">Permission flows</li>
+                </ul>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; border-top: 3px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); margin-bottom: 1rem;">Integration Tests</h4>
+                <ul style="margin-left: 0;">
+                    <li style="padding-left: 2rem;">NFC read → WebView update</li>
+                    <li style="padding-left: 2rem;">Camera capture → state sync</li>
+                    <li style="padding-left: 2rem;">postMessage round-trips</li>
+                    <li style="padding-left: 2rem;">Navigation flows</li>
+                </ul>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; border-top: 3px solid var(--color-accent); grid-column: span 2;">
+                <h4 style="color: var(--color-accent); margin-bottom: 1rem;">Device Testing</h4>
+                <ul style="margin-left: 0;">
+                    <li style="padding-left: 2rem;">Android device with NFC hardware (mandatory)</li>
+                    <li style="padding-left: 2rem;">Test with real NFC tags</li>
+                    <li style="padding-left: 2rem;">Camera permissions on real device</li>
+                    <li style="padding-left: 2rem;">WebView rendering on target Android version</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 15: Implementation Timeline -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Implementation Timeline (Estimated)</h2>
+
+        <div style="margin-top: 1.5rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); font-size: 1rem; margin-bottom: 0.5rem;">Week 1: Project Setup</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;">RN CLI init, install dependencies, configure Android build</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); font-size: 1rem; margin-bottom: 0.5rem;">Week 2-3: NFC Integration</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;">NFC screen, tag reading, error handling, initial testing</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); font-size: 1rem; margin-bottom: 0.5rem;">Week 3-4: Camera Integration</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;">Camera screen, capture flow, permission handling, testing</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+                <h4 style="color: var(--color-accent); font-size: 1rem; margin-bottom: 0.5rem;">Week 4-5: WebView & Bridge</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;">WebView setup, React SPA embedding, postMessage bridge, integration testing</p>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--color-warning);">
+                <h4 style="color: var(--color-warning); font-size: 1rem; margin-bottom: 0.5rem;">Week 5-6: Polish & Demo</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;">Bug fixes, refactoring, device testing, demo video preparation</p>
+            </div>
+        </div>
+        <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--color-text-muted);"><strong>Total:</strong> 6 weeks (one senior RN engineer or two junior engineers)</p>
+    </section>
+
+    <!-- Slide 16: Deliverables -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Deliverables & Demo Scope</h2>
+
+        <div class="deliverables">
+            <h4>1. Android APK</h4>
+            <ul style="margin-left: 0;">
+                <li style="padding-left: 2rem;">Signed, release-ready APK for testing</li>
+                <li style="padding-left: 2rem;">Installation on Android 7.0+ devices</li>
+            </ul>
+        </div>
+
+        <div class="deliverables">
+            <h4>2. Demo Video (~5 minutes)</h4>
+            <ul style="margin-left: 0;">
+                <li style="padding-left: 2rem;">NFC screen: Tap tag → content displayed</li>
+                <li style="padding-left: 2rem;">Camera screen: Capture photo → preview shown</li>
+                <li style="padding-left: 2rem;">WebView screen: Real-time display of both NFC & camera data</li>
+                <li style="padding-left: 2rem;">Navigation between all three tabs</li>
+            </ul>
+        </div>
+
+        <div class="deliverables">
+            <h4>3. Source Code Repository</h4>
+            <ul style="margin-left: 0;">
+                <li style="padding-left: 2rem;">Well-documented, clean codebase</li>
+                <li style="padding-left: 2rem;">README with setup and build instructions</li>
+                <li style="padding-left: 2rem;">Environment configuration file</li>
+                <li style="padding-left: 2rem;">Ready for handoff or further development</li>
+            </ul>
+        </div>
+
+        <div class="deliverables">
+            <h4>4. Technical Documentation</h4>
+            <ul style="margin-left: 0;">
+                <li style="padding-left: 2rem;">Architecture overview & design decisions</li>
+                <li style="padding-left: 2rem;">Integration guide for each feature</li>
+                <li style="padding-left: 2rem;">Testing checklist and known limitations</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Slide 17: Risk Assessment & Mitigation -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Risk Assessment & Mitigation</h2>
+
+        <div style="margin-top: 1.5rem;">
+            <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid var(--color-error); padding: 1rem; margin-bottom: 1rem; border-radius: 8px;">
+                <h4 style="color: var(--color-error); margin-bottom: 0.5rem;">Risk: NFC Hardware Unavailability</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;"><span class="highlight">Mitigation:</span> Mock NFC responses in test mode; provide NFC tag simulator for development</p>
+            </div>
+            <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid var(--color-error); padding: 1rem; margin-bottom: 1rem; border-radius: 8px;">
+                <h4 style="color: var(--color-error); margin-bottom: 0.5rem;">Risk: Android Version Fragmentation</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;"><span class="highlight">Mitigation:</span> Test on Android 7.0, 10.0, 12.0, 14.0+; handle API differences in code</p>
+            </div>
+            <div style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--color-warning); padding: 1rem; margin-bottom: 1rem; border-radius: 8px;">
+                <h4 style="color: var(--color-warning); margin-bottom: 0.5rem;">Risk: postMessage Latency</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;"><span class="highlight">Mitigation:</span> JSON serialization is fast; use debouncing if high-frequency updates needed</p>
+            </div>
+            <div style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--color-warning); padding: 1rem; border-radius: 8px;">
+                <h4 style="color: var(--color-warning); margin-bottom: 0.5rem;">Risk: Camera Permissions on Older Android</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 0;"><span class="highlight">Mitigation:</span> Use react-native-permissions for uniform handling across versions</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 18: Scaling Beyond PoC -->
+    <section class="slide" style="background-color: #0f172a;">
+        <h2>Scaling Beyond PoC</h2>
+
+        <p style="margin-top: 1rem;">Potential enhancements for production deployment:</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+            <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; border-top: 3px solid var(--color-success);">
+                <h4 style="color: var(--color-success); margin-bottom: 1rem;">Phase 2 Features</h4>
+                <ul style="margin-left: 0;">
+                    <li style="padding-left: 2rem;">QR/barcode scanning</li>
+                    <li style="padding-left: 2rem;">NFC write capability</li>
+                    <li style="padding-left: 2rem;">Photo gallery integration</li>
+                    <li style="padding-left: 2rem;">Cloud sync (Firebase/SAP)</li>
+                </ul>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; border-top: 3px solid var(--color-success);">
+                <h4 style="color: var(--color-success); margin-bottom: 1rem;">iOS Support</h4>
+                <ul style="margin-left: 0;">
+                    <li style="padding-left: 2rem;">Adapt NFC library for iOS 13.1+</li>
+                    <li style="padding-left: 2rem;">Xcode build config & code signing</li>
+                    <li style="padding-left: 2rem;">TestFlight beta distribution</li>
+                    <li style="padding-left: 2rem;">App Store submission</li>
+                </ul>
+            </div>
+            <div style="background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; border-top: 3px solid var(--color-accent); grid-column: span 2;">
+                <h4 style="color: var(--color-accent); margin-bottom: 1rem;">Architecture Improvements</h4>
+                <ul style="margin-left: 0;">
+                    <li style="padding-left: 2rem;">Redux or Zustand for complex state</li>
+                    <li style="padding-left: 2rem;">Offline-first architecture with local database</li>
+                    <li style="padding-left: 2rem;">Advanced error tracking (Sentry, Crashlytics)</li>
+                    <li style="padding-left: 2rem;">Modular architecture for feature teams</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 19: Questions & Next Steps -->
+    <section class="slide center" style="background-color: #020617;">
+        <h2 style="font-size: 2.5rem;">Questions?</h2>
+        <p style="font-size: 1.25rem; margin-top: 2rem; color: var(--color-text-secondary);">
+            Ready to build the PoC and demonstrate integrated NFC + Camera + WebView capabilities.
+        </p>
+        <div style="margin-top: 3rem; background-color: var(--color-bg-surface); padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--color-accent);">
+            <h4 style="color: var(--color-accent); margin-bottom: 0.75rem;">Next Steps</h4>
+            <p style="font-size: 0.95rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">1. Confirm tech stack and Android version targets</p>
+            <p style="font-size: 0.95rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">2. Finalize WebView content (remote URL or local bundle)</p>
+            <p style="font-size: 0.95rem; color: var(--color-text-secondary); margin-bottom: 0;">3. Kick-off and sprint planning</p>
+        </div>
+    </section>
+
+</body>
+</html>
