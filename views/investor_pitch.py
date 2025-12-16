@@ -6,6 +6,7 @@ Comprehensive investor presentation with financial instruments and funding detai
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
+import pandas as pd
 from plotly.subplots import make_subplots
 
 def show():
