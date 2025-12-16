@@ -15,6 +15,7 @@ import views.architecture as architecture_page
 import views.wireframes as wireframes_page
 import views.investor_pitch as investor_pitch_page
 import views.investor_targeting as investor_targeting_page
+import views.crowdfunding as crowdfunding_page
 
 # Page configuration
 st.set_page_config(
@@ -72,8 +73,8 @@ with st.sidebar:
     
     selected = option_menu(
         menu_title="Navigation",
-        options=["Home", "Onboarding", "eKYC", "Asset Valuation", "Loan Application", "Results", "Wireframes", "Investor Pitch", "Investor Targeting", "Architecture"],
-        icons=["house", "person-plus", "shield-check", "image", "file-earmark-text", "graph-up", "palette", "briefcase", "search", "diagram-3"],
+        options=["Home", "Onboarding", "eKYC", "Asset Valuation", "Loan Application", "Results", "Wireframes", "Investor Pitch", "Investor Targeting", "Crowdfunding", "Architecture"],
+        icons=["house", "person-plus", "shield-check", "image", "file-earmark-text", "graph-up", "palette", "briefcase", "search", "piggy-bank", "diagram-3"],
         menu_icon="cast",
         default_index=0,
         styles={
@@ -103,6 +104,8 @@ elif selected == "Investor Pitch":
     investor_pitch_page.show()
 elif selected == "Investor Targeting":
     investor_targeting_page.show()
+elif selected == "Crowdfunding":
+    crowdfunding_page.show()
 elif selected == "Architecture":
     architecture_page.show()
 
