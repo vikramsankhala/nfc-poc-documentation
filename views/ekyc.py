@@ -36,22 +36,70 @@ def show():
         - Personal information is extracted
         - Data is cross-referenced with application form
         """)
+        
+        # NFC Reading Simulation Visual
+        if not st.session_state.kyc_status.get('nfc_verified'):
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 15px; text-align: center; margin: 20px 0;">
+                <div style="font-size: 60px; margin-bottom: 20px;">📱</div>
+                <div style="color: white; font-size: 18px; font-weight: bold; margin-bottom: 10px;">Ready to Read NFC</div>
+                <div style="color: rgba(255,255,255,0.9); font-size: 14px;">Tap the button below to simulate NFC passport reading</div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 30px; border-radius: 15px; text-align: center; margin: 20px 0;">
+                <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
+                <div style="color: white; font-size: 18px; font-weight: bold; margin-bottom: 10px;">NFC Passport Verified</div>
+                <div style="color: rgba(255,255,255,0.9); font-size: 14px;">Passport chip data successfully read and verified</div>
+            </div>
+            """, unsafe_allow_html=True)
     
     with col2:
         if st.button("🔍 Read NFC Passport", use_container_width=True, type="primary"):
-            with st.spinner("Reading NFC chip..."):
-                # Simulate NFC reading
-                nfc_data = simulate_nfc_reading(st.session_state.customer_data)
-                
-                if nfc_data:
-                    st.session_state.kyc_status['nfc_data'] = nfc_data
-                    st.session_state.kyc_status['nfc_verified'] = True
-                    st.success("✅ NFC passport read successfully!")
-                    
-                    with st.expander("View NFC Data", expanded=True):
-                        st.json(nfc_data)
+            # Show reading animation
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            # Simulate reading progress
+            import time
+            for i in range(100):
+                time.sleep(0.02)
+                progress_bar.progress(i + 1)
+                if i < 30:
+                    status_text.text("🔍 Detecting NFC chip...")
+                elif i < 60:
+                    status_text.text("📡 Reading passport data...")
+                elif i < 90:
+                    status_text.text("🔐 Decrypting chip data...")
                 else:
-                    st.error("❌ Failed to read NFC chip. Please try again.")
+                    status_text.text("✅ Verifying information...")
+            
+            # Simulate NFC reading
+            nfc_data = simulate_nfc_reading(st.session_state.customer_data)
+            
+            progress_bar.empty()
+            status_text.empty()
+            
+            if nfc_data:
+                st.session_state.kyc_status['nfc_data'] = nfc_data
+                st.session_state.kyc_status['nfc_verified'] = True
+                st.success("✅ NFC passport read successfully!")
+                
+                # Visual passport data display
+                st.markdown("""
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #1f77b4; margin: 15px 0;">
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">🛂</div>
+                        <div style="font-weight: bold; color: #1f77b4; font-size: 18px;">PASSPORT DATA READ</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                with st.expander("View NFC Data", expanded=True):
+                    st.json(nfc_data)
+            else:
+                st.error("❌ Failed to read NFC chip. Please try again.")
     
     # Display NFC status
     if st.session_state.kyc_status.get('nfc_verified'):
@@ -85,43 +133,78 @@ def show():
     )
     
     if uploaded_file is not None:
-        # Display uploaded image
-        st.image(uploaded_file, caption="Uploaded Document", use_container_width=True)
+        # Display uploaded image with visual enhancement
+        col_img1, col_img2 = st.columns([2, 1])
+        
+        with col_img1:
+            st.image(uploaded_file, caption="Uploaded Document", use_container_width=True)
+        
+        with col_img2:
+            st.markdown("""
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 10px; border-left: 4px solid #1f77b4; margin-top: 20px;">
+                <div style="font-weight: bold; color: #1f77b4; margin-bottom: 10px;">📄 Document Info</div>
+                <div style="font-size: 12px; color: #666;">
+                    <div><strong>Type:</strong> {}</div>
+                    <div><strong>File:</strong> {}</div>
+                    <div><strong>Status:</strong> Ready</div>
+                </div>
+            </div>
+            """.format(doc_type, uploaded_file.name), unsafe_allow_html=True)
         
         if st.button("🔍 Verify Document", use_container_width=True, type="primary"):
-            with st.spinner("Processing document with AI..."):
-                # Simulate document verification
-                doc_verification = simulate_kyc_verification(
-                    st.session_state.customer_data,
-                    doc_type,
-                    uploaded_file.name
-                )
+            # Show processing animation
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            import time
+            steps = [
+                ("📸 Scanning document...", 20),
+                ("🔍 OCR extraction...", 40),
+                ("🤖 AI analysis...", 60),
+                ("✅ Data matching...", 80),
+                ("✓ Verification complete!", 100)
+            ]
+            
+            for step_text, progress in steps:
+                time.sleep(0.5)
+                progress_bar.progress(progress)
+                status_text.text(step_text)
+            
+            # Simulate document verification
+            doc_verification = simulate_kyc_verification(
+                st.session_state.customer_data,
+                doc_type,
+                uploaded_file.name
+            )
+            
+            progress_bar.empty()
+            status_text.empty()
+            
+            if doc_verification:
+                st.session_state.kyc_status['document_verified'] = True
+                st.session_state.kyc_status['document_data'] = doc_verification
                 
-                if doc_verification:
-                    st.session_state.kyc_status['document_verified'] = True
-                    st.session_state.kyc_status['document_data'] = doc_verification
+                st.success("✅ Document verified successfully!")
+                
+                # Display verification results
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("#### Verification Results")
+                    st.json(doc_verification.get('extracted_data', {}))
+                
+                with col2:
+                    st.markdown("#### Match Status")
+                    match_status = doc_verification.get('match_status', {})
                     
-                    st.success("✅ Document verified successfully!")
-                    
-                    # Display verification results
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.markdown("#### Verification Results")
-                        st.json(doc_verification.get('extracted_data', {}))
-                    
-                    with col2:
-                        st.markdown("#### Match Status")
-                        match_status = doc_verification.get('match_status', {})
-                        
-                        for field, status in match_status.items():
-                            icon = "✅" if status else "❌"
-                            color = "#22c55e" if status else "#ef4444"
-                            st.markdown(f"""
-                            <div style="padding: 0.5rem; margin: 0.25rem 0; border-left: 3px solid {color};">
-                                {icon} <strong>{field}</strong>
-                            </div>
-                            """, unsafe_allow_html=True)
+                    for field, status in match_status.items():
+                        icon = "✅" if status else "❌"
+                        color = "#22c55e" if status else "#ef4444"
+                        st.markdown(f"""
+                        <div style="padding: 0.5rem; margin: 0.25rem 0; border-left: 3px solid {color};">
+                            {icon} <strong>{field}</strong>
+                        </div>
+                        """, unsafe_allow_html=True)
     
     st.markdown("---")
     

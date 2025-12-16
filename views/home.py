@@ -3,6 +3,7 @@ Home/Dashboard Page
 """
 
 import streamlit as st
+import plotly.graph_objects as go
 from utils.helpers import get_progress_status
 
 def show():
@@ -54,6 +55,75 @@ def show():
     # Display workflow with progress indicators
     progress = get_progress_status()
     
+    # Visual workflow diagram
+    import plotly.graph_objects as go
+    
+    fig = go.Figure()
+    
+    # Create workflow nodes
+    x_positions = [0, 1, 2, 3, 4]
+    y_position = 0
+    
+    for i, (icon, title, description) in enumerate(workflow_steps):
+        step_num = i
+        is_complete = progress.get(f"step_{step_num}", False)
+        color = "#22c55e" if is_complete else "#94a3b8"
+        
+        fig.add_trace(go.Scatter(
+            x=[x_positions[i]],
+            y=[y_position],
+            mode='markers+text',
+            marker=dict(
+                size=100,
+                color=color,
+                line=dict(width=3, color='white')
+            ),
+            text=[icon],
+            textposition="middle center",
+            textfont=dict(size=20),
+            name=title,
+            hovertemplate=f'<b>{title}</b><br>{description}<extra></extra>'
+        ))
+        
+        # Add step number
+        fig.add_annotation(
+            x=x_positions[i],
+            y=y_position + 0.15,
+            text=title,
+            showarrow=False,
+            font=dict(size=10, color=color, family="Arial Black"),
+            bgcolor="white",
+            bordercolor=color,
+            borderwidth=2
+        )
+    
+    # Add connecting arrows
+    for i in range(len(workflow_steps) - 1):
+        fig.add_annotation(
+            x=x_positions[i+1],
+            y=y_position,
+            ax=x_positions[i],
+            ay=y_position,
+            arrowhead=2,
+            arrowsize=1.5,
+            arrowwidth=3,
+            arrowcolor="#666"
+        )
+    
+    fig.update_layout(
+        title="Workflow Progress",
+        xaxis=dict(showgrid=False, showticklabels=False, range=[-0.5, 4.5]),
+        yaxis=dict(showgrid=False, showticklabels=False, range=[-0.3, 0.3]),
+        height=200,
+        showlegend=False,
+        margin=dict(l=20, r=20, t=50, b=20),
+        plot_bgcolor='white'
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Detailed step list
+    st.markdown("#### Step Details")
     for icon, title, description in workflow_steps:
         step_num = int(icon[0]) - 1
         is_complete = progress.get(f"step_{step_num}", False)

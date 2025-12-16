@@ -122,7 +122,87 @@ def show():
         if not uploaded_photos:
             st.error("⚠️ Please upload at least one asset photo.")
         else:
-            with st.spinner("AI is analyzing your asset..."):
+            # Show visual analysis progress
+            progress_container = st.container()
+            with progress_container:
+                st.markdown("### 🤖 AI Analysis in Progress")
+                
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                analysis_steps = st.empty()
+                
+                import time
+                
+                # Step 1: Image Processing
+                status_text.markdown("**Step 1/5:** Processing images...")
+                analysis_steps.markdown("""
+                <div style="background: #e3f2fd; padding: 10px; border-radius: 5px; margin: 5px 0;">
+                    📸 Analyzing {0} photo(s) for quality and content...
+                </div>
+                """.format(len(uploaded_photos)), unsafe_allow_html=True)
+                
+                for i in range(20):
+                    time.sleep(0.05)
+                    progress_bar.progress(i + 1)
+                
+                # Step 2: Computer Vision Analysis
+                status_text.markdown("**Step 2/5:** Computer vision analysis...")
+                analysis_steps.markdown("""
+                <div style="background: #e3f2fd; padding: 10px; border-radius: 5px; margin: 5px 0;">
+                    📸 Analyzing {0} photo(s) for quality and content...<br>
+                    👁️ Computer vision: Detecting condition, damage, and features...
+                </div>
+                """.format(len(uploaded_photos)), unsafe_allow_html=True)
+                
+                for i in range(20, 40):
+                    time.sleep(0.05)
+                    progress_bar.progress(i + 1)
+                
+                # Step 3: Market Data Integration
+                status_text.markdown("**Step 3/5:** Fetching market data...")
+                analysis_steps.markdown("""
+                <div style="background: #e3f2fd; padding: 10px; border-radius: 5px; margin: 5px 0;">
+                    📸 Analyzing {0} photo(s) for quality and content...<br>
+                    👁️ Computer vision: Detecting condition, damage, and features...<br>
+                    📊 Querying market databases (CAP HPI, DVLA)...
+                </div>
+                """.format(len(uploaded_photos)), unsafe_allow_html=True)
+                
+                for i in range(40, 70):
+                    time.sleep(0.05)
+                    progress_bar.progress(i + 1)
+                
+                # Step 4: Valuation Calculation
+                status_text.markdown("**Step 4/5:** Calculating valuation...")
+                analysis_steps.markdown("""
+                <div style="background: #e3f2fd; padding: 10px; border-radius: 5px; margin: 5px 0;">
+                    📸 Analyzing {0} photo(s) for quality and content...<br>
+                    👁️ Computer vision: Detecting condition, damage, and features...<br>
+                    📊 Querying market databases (CAP HPI, DVLA)...<br>
+                    💰 Calculating market value based on condition and market data...
+                </div>
+                """.format(len(uploaded_photos)), unsafe_allow_html=True)
+                
+                for i in range(70, 90):
+                    time.sleep(0.05)
+                    progress_bar.progress(i + 1)
+                
+                # Step 5: Finalizing
+                status_text.markdown("**Step 5/5:** Finalizing results...")
+                analysis_steps.markdown("""
+                <div style="background: #e8f5e9; padding: 10px; border-radius: 5px; margin: 5px 0;">
+                    📸 Analyzing {0} photo(s) for quality and content...<br>
+                    👁️ Computer vision: Detecting condition, damage, and features...<br>
+                    📊 Querying market databases (CAP HPI, DVLA)...<br>
+                    💰 Calculating market value based on condition and market data...<br>
+                    ✅ Generating comprehensive valuation report...
+                </div>
+                """.format(len(uploaded_photos)), unsafe_allow_html=True)
+                
+                for i in range(90, 100):
+                    time.sleep(0.05)
+                    progress_bar.progress(i + 1)
+                
                 # Prepare asset info
                 asset_info = {
                     'type': asset_type,
@@ -142,6 +222,11 @@ def show():
                 
                 # Simulate AI valuation
                 valuation_result = simulate_asset_valuation(asset_info, uploaded_photos)
+                
+                # Clear progress indicators
+                progress_bar.empty()
+                status_text.empty()
+                analysis_steps.empty()
                 
                 if valuation_result:
                     st.session_state.asset_data = {
