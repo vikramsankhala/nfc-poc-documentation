@@ -13,6 +13,7 @@ import views.loan_application as loan_application_page
 import views.results as results_page
 import views.architecture as architecture_page
 import views.wireframes as wireframes_page
+import views.investor_pitch as investor_pitch_page
 
 # Page configuration
 st.set_page_config(
@@ -70,8 +71,8 @@ with st.sidebar:
     
     selected = option_menu(
         menu_title="Navigation",
-        options=["Home", "Onboarding", "eKYC", "Asset Valuation", "Loan Application", "Results", "Wireframes", "Architecture"],
-        icons=["house", "person-plus", "shield-check", "image", "file-earmark-text", "graph-up", "palette", "diagram-3"],
+        options=["Home", "Onboarding", "eKYC", "Asset Valuation", "Loan Application", "Results", "Wireframes", "Investor Pitch", "Architecture"],
+        icons=["house", "person-plus", "shield-check", "image", "file-earmark-text", "graph-up", "palette", "briefcase", "diagram-3"],
         menu_icon="cast",
         default_index=0,
         styles={
@@ -97,6 +98,8 @@ elif selected == "Results":
     results_page.show()
 elif selected == "Wireframes":
     wireframes_page.show()
+elif selected == "Investor Pitch":
+    investor_pitch_page.show()
 elif selected == "Architecture":
     architecture_page.show()
 
